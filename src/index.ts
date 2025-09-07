@@ -14,12 +14,14 @@ import { i18nMiddleware } from './middleware/i18n';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import classRoutes from './routes/class.routes';
+import academicYearRoutes from './routes/academicYear.routes';
 import studentRoutes from './routes/student.routes';
 import teacherRoutes from './routes/teacher.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import examRoutes from './routes/exam.routes';
 import noticeRoutes from './routes/notice.routes';
 import settingsRoutes from './routes/settings.routes';
+import aiRoutes from './routes/ai.routes';
 
 // Load environment variables
 dotenv.config();
@@ -76,7 +78,21 @@ const swaggerSpecs = swaggerJsdoc(swaggerOptions);
 // Middleware
 app.use(helmet()); // Security headers
 app.use(limiter); // Rate limiting
-app.use(cors()); // CORS
+
+// CORS configuration
+app.use(cors({
+  origin: [
+    'http://localhost:5173', // Vite dev server
+    'http://localhost:3000', // Backend server (for development)
+    'http://127.0.0.1:5173', // Alternative localhost
+    'http://127.0.0.1:3000'  // Alternative localhost
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+}));
+
 app.use(express.json({ limit: '10mb' })); // JSON parser
 app.use(express.urlencoded({ extended: true })); // URL-encoded parser
 app.use(i18nMiddleware); // Internationalization
@@ -97,12 +113,14 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/classes', classRoutes);
+app.use('/api/academic-years', academicYearRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/teachers', teacherRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/notices', noticeRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/ai', aiRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

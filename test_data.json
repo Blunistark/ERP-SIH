@@ -1,0 +1,11 @@
+{
+  "context": {
+    "studentData": [
+      {"name": "John", "grade": 85},
+      {"name": "Jane", "grade": 92}
+    ],
+    "type": "student_performance",
+    "subject": "Mathematics",
+    "grade_level": "10th"
+  }
+}
