@@ -1,0 +1,11 @@
+{
+  "operation": "update",
+  "table": "subjects",
+  "data": {
+    "name": "Advanced Mathematics",
+    "description": "Advanced Introduction to Mathematics"
+  },
+  "where": {
+    "code": "MATH101"
+  }
+}

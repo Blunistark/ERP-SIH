@@ -1,0 +1,9 @@
+{
+  "operation": "insert",
+  "table": "subjects",
+  "data": {
+    "name": "Mathematics",
+    "code": "MATH101",
+    "description": "Introduction to Mathematics"
+  }
+}

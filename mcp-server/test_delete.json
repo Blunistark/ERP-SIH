@@ -1,0 +1,7 @@
+{
+  "operation": "delete",
+  "table": "subjects",
+  "where": {
+    "code": "MATH101"
+  }
+}
