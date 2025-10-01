@@ -19,9 +19,12 @@ import studentRoutes from './routes/student.routes';
 import teacherRoutes from './routes/teacher.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import examRoutes from './routes/exam.routes';
+import subjectRoutes from './routes/subject.routes';
+import timetableRoutes from './routes/timetable.routes';
 import noticeRoutes from './routes/notice.routes';
 import settingsRoutes from './routes/settings.routes';
 import aiRoutes from './routes/ai.routes';
+import adminRoutes from './routes/admin.routes';
 
 // Load environment variables
 dotenv.config();
@@ -118,9 +121,12 @@ app.use('/api/students', studentRoutes);
 app.use('/api/teachers', teacherRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/exams', examRoutes);
+app.use('/api/subjects', subjectRoutes);
+app.use('/api/timetables', timetableRoutes);
 app.use('/api/notices', noticeRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

@@ -7,81 +7,86 @@ const router = Router();
 /**
  * @swagger
  * tags:
- *   name: Exams
- *   description: Exam management endpoints
+ *   name: Subjects
+ *   description: Subject management endpoints
  */
 
-// All exam routes require authentication
+// All subject routes require authentication
 router.use(authenticate);
 
 /**
  * @swagger
- * /api/exams:
+ * /api/subjects:
  *   get:
- *     summary: Get exam records
- *     tags: [Exams]
+ *     summary: Get all subjects
+ *     tags: [Subjects]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Exam records retrieved successfully
+ *         description: Subjects retrieved successfully
  *       401:
  *         description: Unauthorized
  */
 router.get('/', authorize('ADMIN', 'TEACHER'), async (req, res) => {
   try {
-    const { subjectId, page = '1', limit = '50' } = req.query;
+    const { search, page = '1', limit = '50' } = req.query;
     
     const skip = (Number(page) - 1) * Number(limit);
     
     const where: any = {};
     
-    if (subjectId && typeof subjectId === 'string') {
-      where.subjectId = subjectId;
+    if (search && typeof search === 'string') {
+      where.OR = [
+        {
+          name: {
+            contains: search,
+            mode: 'insensitive' as const,
+          },
+        },
+        {
+          code: {
+            contains: search,
+            mode: 'insensitive' as const,
+          },
+        },
+      ];
     }
 
-    const [exams, total] = await Promise.all([
-      prisma.exam.findMany({
+    const [subjects, total] = await Promise.all([
+      prisma.subject.findMany({
         where,
         skip,
         take: Number(limit),
         include: {
-          subject: true,
-          term: {
+          teachers: {
             include: {
-              academicYear: true,
-            },
-          },
-          examResults: {
-            include: {
-              student: {
+              user: {
                 include: {
-                  user: {
-                    include: {
-                      profile: true,
-                    },
-                  },
-                  class: true,
+                  profile: true,
                 },
               },
             },
           },
+          classes: true,
           _count: {
             select: {
-              examResults: true,
+              teachers: true,
+              classes: true,
+              exams: true,
             },
           },
         },
         orderBy: {
-          date: 'desc',
+          name: 'asc',
         },
       }),
-      prisma.exam.count({ where }),
+      prisma.subject.count({ where }),
     ]);
 
     res.status(200).json({
       success: true,
-      data: exams,
+      data: subjects,
       pagination: {
         total,
         page: Number(page),
@@ -90,10 +95,10 @@ router.get('/', authorize('ADMIN', 'TEACHER'), async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error fetching exams:', error);
+    console.error('Error fetching subjects:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch exams',
+      message: 'Failed to fetch subjects',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
