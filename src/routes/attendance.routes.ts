@@ -145,4 +145,167 @@ router.get('/', authorize('ADMIN', 'TEACHER', 'PARENT'), (req, res) => {
   });
 });
 
+/**
+ * @swagger
+ * /api/attendance/reports/class:
+ *   get:
+ *     summary: Get class attendance reports
+ *     tags: [Attendance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: month
+ *         schema:
+ *           type: string
+ *           format: YYYY-MM
+ *         description: Month for the report (YYYY-MM format)
+ *     responses:
+ *       200:
+ *         description: Class attendance reports retrieved successfully
+ */
+router.get('/reports/class', authorize('ADMIN', 'TEACHER'), async (req, res) => {
+  try {
+    const { month } = req.query;
+    const startDate = new Date(`${month}-01`);
+    const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+
+    const classes = await prisma.class.findMany({
+      include: {
+        students: {
+          include: {
+            attendances: {
+              where: {
+                date: {
+                  gte: startDate,
+                  lte: endDate,
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const reports = classes.map((cls: any) => {
+      const totalStudents = cls.students.length;
+      const totalAttendanceDays = cls.students.reduce((sum: number, student: any) => sum + student.attendances.length, 0);
+      const presentDays = cls.students.reduce((sum: number, student: any) =>
+        sum + student.attendances.filter((a: any) => a.status === 'PRESENT').length, 0
+      );
+
+      const averageAttendance = totalAttendanceDays > 0 ? (presentDays / totalAttendanceDays) * 100 : 0;
+
+      return {
+        classId: cls.id,
+        className: cls.name,
+        section: cls.section,
+        totalStudents,
+        averageAttendance: Math.round(averageAttendance * 10) / 10,
+        presentDays,
+        totalDays: totalAttendanceDays,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: reports,
+    });
+  } catch (error) {
+    console.error('Error fetching class attendance reports:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching class attendance reports',
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/attendance/reports/student:
+ *   get:
+ *     summary: Get student attendance reports
+ *     tags: [Attendance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: month
+ *         schema:
+ *           type: string
+ *           format: YYYY-MM
+ *         description: Month for the report (YYYY-MM format)
+ *       - in: query
+ *         name: classId
+ *         schema:
+ *           type: string
+ *         description: Class ID to filter students
+ *     responses:
+ *       200:
+ *         description: Student attendance reports retrieved successfully
+ */
+router.get('/reports/student', authorize('ADMIN', 'TEACHER'), async (req, res) => {
+  try {
+    const { month, classId } = req.query;
+    const startDate = new Date(`${month}-01`);
+    const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+
+    const whereClause: any = {};
+    if (classId) {
+      whereClause.classId = classId;
+    }
+
+    const students = await prisma.student.findMany({
+      where: whereClause,
+      include: {
+        user: {
+          include: {
+            profile: true,
+          },
+        },
+        class: true,
+        attendances: {
+          where: {
+            date: {
+              gte: startDate,
+              lte: endDate,
+            },
+          },
+        },
+      },
+    });
+
+    const reports = students.map((student: any) => {
+      const totalDays = student.attendances.length;
+      const presentDays = student.attendances.filter((a: any) => a.status === 'PRESENT').length;
+      const absentDays = student.attendances.filter((a: any) => a.status === 'ABSENT').length;
+      const lateDays = student.attendances.filter((a: any) => a.status === 'LATE').length;
+      const attendancePercentage = totalDays > 0 ? (presentDays / totalDays) * 100 : 0;
+
+      return {
+        studentId: student.id,
+        studentName: `${student.user.profile.firstName} ${student.user.profile.lastName}`,
+        rollNumber: student.rollNumber,
+        className: `${student.class.name} ${student.class.section}`,
+        totalDays,
+        presentDays,
+        absentDays,
+        lateDays,
+        attendancePercentage: Math.round(attendancePercentage * 10) / 10,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: reports,
+    });
+  } catch (error) {
+    console.error('Error fetching student attendance reports:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching student attendance reports',
+    });
+  }
+});
+
 export default router;
