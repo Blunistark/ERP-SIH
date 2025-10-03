@@ -22,13 +22,19 @@
     height: 18vh;
   }
 
+  .h-30vh {
+    height: 30vh;
+  }
+
   .gradient-fade-overlay {
     background: linear-gradient(
       to top, 
-      rgba(30, 64, 175, 0.85),    /* Deep blue at bottom */
-      rgba(59, 130, 246, 0.5),     /* Medium blue in middle */
-      rgba(96, 165, 250, 0.2),     /* Light blue */
-      transparent                   /* Fade to transparent */
+      rgba(30, 64, 175, 0.9) 0%,      /* Deep blue at bottom - stronger */
+      rgba(37, 99, 235, 0.7) 20%,      /* Rich blue */
+      rgba(59, 130, 246, 0.5) 40%,     /* Medium blue */
+      rgba(96, 165, 250, 0.3) 60%,     /* Light blue */
+      rgba(147, 197, 253, 0.15) 80%,   /* Very light blue */
+      transparent 100%                  /* Fade to transparent */
     );
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);

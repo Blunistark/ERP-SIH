@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { useVoiceAndTTS } from '../../hooks/useVoiceAndTTS';
 import { API_ENDPOINTS } from '../../config/api';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -82,7 +83,48 @@ const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ isOpen, onClo
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Voice and TTS Hook with automatic language detection
+  const {
+    transcript,
+    isListening,
+    startListening,
+    stopListening,
+    resetTranscript,
+    browserSupportsSpeechRecognition,
+    speak,
+    autoSpeak,
+    toggleAutoSpeak,
+    stopSpeaking,
+    isSpeaking,
+  } = useVoiceAndTTS();
+
   const currentPageType = detectPageType();
+
+  // Handle voice transcript
+  useEffect(() => {
+    if (transcript && !isListening) {
+      setInputMessage(transcript);
+      resetTranscript();
+    }
+  }, [transcript, isListening, resetTranscript]);
+
+  // Auto-speak AI responses
+  useEffect(() => {
+    if (autoSpeak && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.type === 'ai' && lastMessage.content) {
+        const cleanText = lastMessage.content
+          .replace(/[🧭📋✅❌]/g, '')
+          .replace(/```json/g, '')
+          .replace(/```/g, '')
+          .trim();
+        
+        if (cleanText) {
+          speak(cleanText);
+        }
+      }
+    }
+  }, [messages, autoSpeak, speak]);
 
   const getSessionId = () => {
     let sid = localStorage.getItem('ai_chat_session_id');
@@ -279,11 +321,22 @@ const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ isOpen, onClo
 
       if (responseText) {
         try {
+          // Try to extract JSON from anywhere in the response
           let cleanedText = responseText.trim();
-          if (cleanedText.startsWith('```json')) {
-            cleanedText = cleanedText.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+          
+          // Check if response contains ```json code blocks
+          const jsonBlockMatch = cleanedText.match(/```json\s*([\s\S]*?)\s*```/);
+          if (jsonBlockMatch) {
+            cleanedText = jsonBlockMatch[1].trim();
           } else if (cleanedText.startsWith('```')) {
-            cleanedText = cleanedText.replace(/```\s*/g, '');
+            // Handle plain code blocks
+            cleanedText = cleanedText.replace(/```\s*/g, '').trim();
+          } else {
+            // Try to extract JSON object from the text (handles cases where text comes before JSON)
+            const jsonMatch = cleanedText.match(/\{[\s\S]*"action"[\s\S]*\}/);
+            if (jsonMatch) {
+              cleanedText = jsonMatch[0];
+            }
           }
 
           const parsed = JSON.parse(cleanedText);
@@ -433,11 +486,22 @@ const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ isOpen, onClo
 
         if (responseText) {
           try {
+            // Try to extract JSON from anywhere in the response
             let cleanedText = responseText.trim();
-            if (cleanedText.startsWith('```json')) {
-              cleanedText = cleanedText.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+            
+            // Check if response contains ```json code blocks
+            const jsonBlockMatch = cleanedText.match(/```json\s*([\s\S]*?)\s*```/);
+            if (jsonBlockMatch) {
+              cleanedText = jsonBlockMatch[1].trim();
             } else if (cleanedText.startsWith('```')) {
-              cleanedText = cleanedText.replace(/```\s*/g, '');
+              // Handle plain code blocks
+              cleanedText = cleanedText.replace(/```\s*/g, '').trim();
+            } else {
+              // Try to extract JSON object from the text (handles cases where text comes before JSON)
+              const jsonMatch = cleanedText.match(/\{[\s\S]*"action"[\s\S]*\}/);
+              if (jsonMatch) {
+                cleanedText = jsonMatch[0];
+              }
             }
 
             const parsed = JSON.parse(cleanedText);
@@ -498,14 +562,14 @@ const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ isOpen, onClo
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 flex items-end justify-center pointer-events-none">
-      {/* Beautiful gradient fade overlay */}
+      {/* Beautiful gradient fade overlay - 30% screen height */}
       <div 
-        className="absolute inset-0 h-18vh gradient-fade-overlay pointer-events-auto"
+        className="absolute inset-0 h-30vh gradient-fade-overlay pointer-events-auto"
         onClick={onClose}
       ></div>
 
       {/* Main content container - centered with bottom spacing */}
-      <div className="relative z-10 w-full flex flex-col items-center justify-end h-18vh pointer-events-none pb-6">
+      <div className="relative z-10 w-full flex flex-col items-center justify-end h-30vh pointer-events-none pb-6">
 
         <div className="w-full max-w-6xl px-8 flex items-center justify-center gap-8 pointer-events-none">
           {/* Center: Messages and Status */}
@@ -553,23 +617,65 @@ const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ isOpen, onClo
             ) : null}
           </div>
 
-          {/* Right: Input Box */}
+          {/* Right: Input Box with Voice Controls */}
           <div className="flex-shrink-0 w-80 pointer-events-auto">
             <div className="bg-white/25 backdrop-blur-xl rounded-xl border border-blue-300/40 shadow-2xl overflow-hidden hover:border-blue-300/60 transition-all duration-300">
-              <div className="flex items-center px-4 py-2">
+              <div className="flex items-center px-4 py-2 gap-2">
+                {/* Voice Input Button */}
+                {browserSupportsSpeechRecognition && (
+                  <button
+                    onClick={isListening ? stopListening : startListening}
+                    className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 ${
+                      isListening 
+                        ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
+                        : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'
+                    }`}
+                    aria-label={isListening ? "Stop Listening" : "Start Voice Input"}
+                  >
+                    {isListening ? (
+                      <MicOff className="w-4 h-4 text-white" />
+                    ) : (
+                      <Mic className="w-4 h-4 text-white" />
+                    )}
+                  </button>
+                )}
+                
+                {/* Text Input */}
                 <input
                   type="text"
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Type your message..."
+                  placeholder={isListening ? "Listening..." : "Type your message..."}
                   className="flex-1 bg-transparent text-white placeholder-white/80 outline-none text-xs md:text-sm font-semibold"
-                  disabled={isPending}
+                  disabled={isPending || isListening}
                 />
+                
+                {/* TTS Toggle Button */}
+                <button
+                  onClick={toggleAutoSpeak}
+                  className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 ${
+                    autoSpeak 
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600' 
+                      : 'bg-gray-500/50 hover:bg-gray-600/50'
+                  }`}
+                  aria-label={autoSpeak ? "Disable Auto-Speak" : "Enable Auto-Speak"}
+                  title={autoSpeak ? "Auto-speak is ON" : "Auto-speak is OFF"}
+                >
+                  {isSpeaking ? (
+                    <Volume2 className="w-4 h-4 text-white animate-pulse" />
+                  ) : autoSpeak ? (
+                    <Volume2 className="w-4 h-4 text-white" />
+                  ) : (
+                    <VolumeX className="w-4 h-4 text-white" />
+                  )}
+                </button>
+                
+                {/* Send Button */}
                 <button
                   onClick={handleSendMessage}
                   disabled={!inputMessage.trim() || isPending}
-                  className="ml-2 w-9 h-9 flex items-center justify-center bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105"
+                  className="w-9 h-9 flex items-center justify-center bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105"
                   aria-label="Send Message"
                 >
                   <Send className="w-4 h-4 text-white" />
