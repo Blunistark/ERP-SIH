@@ -1,13 +1,21 @@
 # 🔌 Port Configuration
 
-Due to port conflicts with n8n, the ERP system uses custom ports:
+Due to port conflicts with n### Production Option (Recommended)
+Configure your domain to point to the VM, then use HTTPS on port 8443:
+```
+https://erp.hacksters.tech:8443
+```
+
+**Note:** Standard HTTPS port 443 is used by n8n. You can either:
+- Use port 8443 for ERP
+- Or set up a reverse proxy to route both services on standard ports ERP system uses custom ports:
 
 ## 📊 Port Mapping
 
 | Service | External Port | Internal Port | Purpose |
 |---------|--------------|---------------|---------|
 | **Nginx (HTTP)** | **8080** | 80 | Main web access |
-| **Nginx (HTTPS)** | **443** | 443 | SSL/TLS access |
+| **Nginx (HTTPS)** | **8443** | 443 | SSL/TLS access |
 | PostgreSQL | 5433 | 5432 | Database |
 | Backend API | (internal) | 3000 | API server |
 | Frontend | (internal) | 80 | React app |
@@ -22,7 +30,9 @@ http://YOUR_VM_IP:8080
 
 ### After SSL Setup (HTTPS)
 ```
-https://erp.hacksters.tech
+https://YOUR_VM_IP:8443
+# Or with domain (requires DNS + SSL):
+https://erp.hacksters.tech:8443
 ```
 
 ## 🔧 Why Port 8080?
@@ -32,9 +42,9 @@ Port 80 is already in use by your n8n installation, so we use port 8080 for HTTP
 **Options:**
 
 ### Option A: Keep Both Services (Current Setup)
-- n8n: Port 80
-- ERP: Port 8080 (HTTP) and 443 (HTTPS)
-- Access ERP at: `http://YOUR_VM_IP:8080`
+- n8n: Port 80 and 443
+- ERP: Port 8080 (HTTP) and 8443 (HTTPS)
+- Access ERP at: `http://YOUR_VM_IP:8080` or `https://YOUR_VM_IP:8443`
 
 ### Option B: Use Nginx Proxy for Both
 Set up a main Nginx reverse proxy to route:
@@ -66,40 +76,31 @@ Port 443 (HTTPS) doesn't conflict, so once SSL is set up, you can access via the
 docker compose ps
 
 # Access application
-# Before SSL: http://YOUR_VM_IP:8080
-# After SSL: https://erp.hacksters.tech
+# HTTP: http://YOUR_VM_IP:8080
+# HTTPS: https://YOUR_VM_IP:8443 (after SSL)
 ```
 
 ## 🔐 SSL Setup Note
 
-The setup-ssl.sh script will:
-1. Stop nginx temporarily
-2. Use certbot on port 80 (will temporarily conflict)
-3. Get certificate
-4. Configure HTTPS on port 443
+The setup-ssl.sh script will get SSL certificates. After setup:
+- Access via HTTPS at: `https://YOUR_VM_IP:8443`
 
-**Before running SSL setup:**
-- Stop n8n temporarily: `sudo systemctl stop n8n` (or docker stop if n8n is containerized)
-- Run SSL setup
-- Restart n8n
-- After SSL, access ERP on port 443 (HTTPS) which doesn't conflict
+**Port 8443 doesn't conflict with n8n**, so no need to stop n8n for SSL setup.
 
 ## 💡 Best Practice
 
-For production, use HTTPS (port 443) which doesn't conflict with n8n:
+For production with both services running:
 
-1. Stop n8n temporarily
-2. Run `./setup-ssl.sh`
-3. Update nginx config for HTTPS
-4. Restart services
-5. Restart n8n
-6. Access ERP at: `https://erp.hacksters.tech`
-7. Access n8n at: `http://YOUR_VM_IP` or configure n8n subdomain
+1. Run `./setup-ssl.sh` (no need to stop n8n)
+2. Update nginx config for HTTPS
+3. Restart services
+4. Access ERP at: `https://YOUR_VM_IP:8443` or `https://erp.hacksters.tech:8443`
+5. Access n8n at: `https://n8n.pipfactor.com` (your existing setup)
 
 ---
 
 **Current Status:**
 - ✅ PostgreSQL: Port 5433 (no conflict)
 - ✅ HTTP: Port 8080 (no conflict)
-- ✅ HTTPS: Port 443 (no conflict)
-- ⚠️ SSL setup requires temporary stop of n8n
+- ✅ HTTPS: Port 8443 (no conflict)
+- ✅ All services can run together without stopping n8n
