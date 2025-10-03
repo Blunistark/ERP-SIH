@@ -8,6 +8,10 @@ set -e
 echo "🗄️  Initializing Database..."
 echo ""
 
+# Copy migrations to container
+echo "📁 Copying migrations to container..."
+docker cp ./prisma/migrations app:/app/prisma/
+
 # Check if migrations exist in container
 echo "🔍 Checking for migrations in container..."
 docker compose exec -T app ls -la prisma/migrations/ || echo "⚠️  Migrations folder not found in container!"
