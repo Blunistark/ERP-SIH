@@ -34,9 +34,17 @@ echo ""
 echo "🛑 Stopping all containers..."
 docker compose down
 
-# Remove old containers and volumes (optional - comment out if you want to keep data)
-# echo "🗑️  Removing old containers..."
-# docker compose down -v
+# Remove volumes to ensure fresh start
+echo "🗑️  Removing old volumes..."
+docker compose down -v
+
+# Export environment variables so they're available to docker-compose
+echo "📤 Loading environment variables..."
+export $(cat .env | grep -v '^#' | xargs)
+
+# Rebuild containers with new environment
+echo "� Rebuilding containers with new environment..."
+docker compose build --no-cache app
 
 # Start postgres first and wait for it to be healthy
 echo "🚀 Starting PostgreSQL..."
