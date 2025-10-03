@@ -7,8 +7,10 @@ set -e
 
 echo "🔧 Updating Frontend API Configuration..."
 
-# Get VM IP
-VM_IP=$(curl -s ifconfig.me)
+# Get VM IP (force IPv4)
+VM_IP=$(curl -4 -s ifconfig.me)
+
+echo "📍 Detected IP: ${VM_IP}"
 
 # Update .env.production
 cat > frontend/ERP/.env.production << EOF
