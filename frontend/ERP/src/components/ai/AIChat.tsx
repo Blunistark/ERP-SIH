@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader, Sparkles } from 'lucide-react';
+import { Send, Bot, User, Loader } from 'lucide-react';
 import { API_ENDPOINTS } from '../../config/api';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -19,6 +19,7 @@ interface ChatMessage {
   type: 'user' | 'ai';
   content: string;
   timestamp: Date;
+  options?: string[]; // Quick reply options for user to click
 }
 
 // Route aliases for flexible navigation
@@ -329,6 +330,19 @@ const AIChat: React.FC = () => {
             return;
           }
           
+          // Handle quick option buttons
+          if (parsed.action === 'presentOptions' && parsed.options && Array.isArray(parsed.options)) {
+            const aiMessage: ChatMessage = {
+              id: (Date.now() + 1).toString(),
+              type: 'ai',
+              content: parsed.message || 'Please choose an option:',
+              timestamp: new Date(),
+              options: parsed.options,
+            };
+            setMessages(prev => [...prev, aiMessage]);
+            return;
+          }
+          
           // Handle form fill command from AI
           if (parsed.action === 'fillForm' && parsed.data) {
             console.log('✨ Filling form with data:', parsed.data);
@@ -414,6 +428,88 @@ const AIChat: React.FC = () => {
     }
   };
 
+  const handleOptionClick = (option: string) => {
+    // Remove options from all messages to prevent re-clicking
+    setMessages(prev => prev.map(msg => ({ ...msg, options: undefined })));
+    
+    // Add user message with the selected option
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: option,
+      timestamp: new Date(),
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Process the option through AI
+    (async () => {
+      try {
+        setIsPending(true);
+        const response = await sendToN8n(option);
+        const responseText = extractResponse(response.data?.result);
+        
+        if (responseText) {
+          try {
+            let cleanedText = responseText.trim();
+            if (cleanedText.startsWith('```json')) {
+              cleanedText = cleanedText.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+            } else if (cleanedText.startsWith('```')) {
+              cleanedText = cleanedText.replace(/```\s*/g, '');
+            }
+            
+            const parsed = JSON.parse(cleanedText);
+            
+            if (parsed.action === 'navigate' && parsed.url) {
+              const aiMessage: ChatMessage = {
+                id: (Date.now() + 1).toString(),
+                type: 'ai',
+                content: `🧭 Navigating to ${parsed.url}...`,
+                timestamp: new Date(),
+              };
+              setMessages(prev => [...prev, aiMessage]);
+              setTimeout(() => navigate(parsed.url), 500);
+              return;
+            }
+            
+            if (parsed.action === 'presentOptions' && parsed.options) {
+              const aiMessage: ChatMessage = {
+                id: (Date.now() + 1).toString(),
+                type: 'ai',
+                content: parsed.message || 'Please choose an option:',
+                timestamp: new Date(),
+                options: parsed.options,
+              };
+              setMessages(prev => [...prev, aiMessage]);
+              return;
+            }
+          } catch (e) {
+            // Not JSON, treat as regular response
+          }
+        }
+        
+        const aiMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          type: 'ai',
+          content: responseText || 'I apologize, but I could not process your request.',
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, aiMessage]);
+      } catch (error) {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        const errorMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          type: 'ai',
+          content: `Error: ${errMsg}`,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      } finally {
+        setIsPending(false);
+      }
+    })();
+  };
+
   return (
     <Card className="h-96 flex flex-col">
       <div className="flex items-center space-x-2 mb-4 pb-4 border-b border-gray-200">
@@ -438,11 +534,27 @@ const AIChat: React.FC = () => {
               <div className="flex items-start space-x-2">
                 {message.type === 'ai' && <Bot className="w-4 h-4 mt-0.5" />}
                 {message.type === 'user' && <User className="w-4 h-4 mt-0.5" />}
-                <div>
+                <div className="w-full">
                   <p className="text-sm">{message.content}</p>
                   <p className="text-xs opacity-75 mt-1">
                     {message.timestamp.toLocaleTimeString()}
                   </p>
+                  
+                  {/* Quick Option Buttons */}
+                  {message.options && message.options.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {message.options.map((option, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleOptionClick(option)}
+                          className="px-3 py-1.5 text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-blue-400 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={isPending}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
