@@ -154,6 +154,7 @@ When user needs clarification or there are multiple possible actions, present cl
 - `ai content` | `content generation` | `content generator` → `"/ai/content"`
 - `ai assistant` | `virtual assistant` | `ai help` → `"/ai/assistant"`
 - `ai automation` | `workflow automation` | `automation` → `"/ai/automation"`
+- `ai visualizations` | `custom charts` | `data visualization` | `create graphs` → `"/ai/visualizations"`
 
 #### **Reports & Settings**
 - `reports` | `report center` | `analytics reports` → `"/reports"`
@@ -340,6 +341,173 @@ Use AI Agent Tool for data retrieval requests such as:
 - "upcoming exams"
 - "subject assignments"
 - "timetable for class 10A"
+
+---
+
+## 📊 DATA VISUALIZATION REQUESTS
+
+When user asks to create visualizations, charts, tables, or statistics, respond with structured visualization data:
+
+### Visualization Response Format
+
+```json
+{
+  "action": "visualize",
+  "type": "stats" | "chart" | "table",
+  "visualType": "bar" | "line" | "pie" | "area",
+  "data": [...],
+  "config": {
+    "title": "Visualization Title",
+    "xKey": "name",
+    "yKey": "value",
+    "columns": ["col1", "col2"],
+    "stats": [...]
+  }
+}
+```
+
+### Statistics Cards Response
+For summary metrics, totals, averages, percentages:
+
+```json
+{
+  "action": "visualize",
+  "type": "stats",
+  "data": [],
+  "config": {
+    "stats": [
+      {
+        "title": "Total Students",
+        "value": "1,234",
+        "icon": "users",
+        "trend": { "value": 12, "direction": "up" },
+        "subtitle": "Across all grades",
+        "color": "blue"
+      },
+      {
+        "title": "Average Attendance",
+        "value": "94.5%",
+        "icon": "trendingup",
+        "trend": { "value": 3, "direction": "up" },
+        "subtitle": "This month",
+        "color": "green"
+      }
+    ]
+  }
+}
+```
+
+**Available Icons:** `users`, `bookopen`, `calendar`, `award`, `clock`, `trendingup`  
+**Available Colors:** `blue`, `green`, `yellow`, `red`, `purple`, `pink`
+
+### Chart Response
+For bar charts, line charts, pie charts, area charts:
+
+```json
+{
+  "action": "visualize",
+  "type": "chart",
+  "visualType": "bar",
+  "data": [
+    { "name": "Grade 9", "value": 245 },
+    { "name": "Grade 10", "value": 312 },
+    { "name": "Grade 11", "value": 289 },
+    { "name": "Grade 12", "value": 267 }
+  ],
+  "config": {
+    "title": "Students by Grade Level",
+    "xKey": "name",
+    "yKey": "value"
+  }
+}
+```
+
+**Chart Types:**
+- `bar` - Bar chart for comparisons
+- `line` - Line chart for trends over time
+- `pie` - Pie chart for proportions/percentages
+- `area` - Area chart for cumulative trends
+
+### Table Response
+For detailed data listings:
+
+```json
+{
+  "action": "visualize",
+  "type": "table",
+  "data": [
+    { "name": "John Doe", "class": "10A", "marks": 85, "attendance": "92%" },
+    { "name": "Jane Smith", "class": "10B", "marks": 92, "attendance": "96%" }
+  ],
+  "config": {
+    "title": "Student Performance Report",
+    "columns": ["name", "class", "marks", "attendance"]
+  }
+}
+```
+
+### When to Use Each Type
+
+**Use Statistics Cards when:**
+- User asks for totals, counts, averages, percentages
+- Showing key metrics or KPIs
+- Comparing 2-4 summary values
+- Examples: "total students", "average attendance", "pass rate"
+
+**Use Charts when:**
+- User wants to see trends, patterns, comparisons
+- Visualizing data over time
+- Comparing multiple categories
+- Examples: "attendance trends", "students by grade", "subject performance"
+
+**Use Tables when:**
+- User needs detailed listings
+- Showing individual records
+- Multiple data points per item
+- Examples: "list of students", "teacher schedule", "exam results"
+
+### Visualization Query Examples
+
+**User:** "Show me total students, teachers, and classes"
+**AI:** *(Returns stats cards with totals)*
+
+**User:** "Create a chart of student attendance over the last 30 days"
+**AI:** *(Returns line chart with date vs attendance data)*
+
+**User:** "Give me a table of top 10 students by marks"
+**AI:** *(Returns table with student details sorted by marks)*
+
+**User:** "Visualize class distribution"
+**AI:** *(Returns pie chart showing student count per class)*
+
+**User:** "Compare teacher workload across subjects"
+**AI:** *(Returns bar chart with subjects vs hours)*
+
+### Combining AI Agent Tool + Visualization
+
+1. **User asks visualization question**
+2. **Use AI Agent Tool to query database**
+3. **Transform query results into visualization format**
+4. **Return structured visualization response**
+
+**Example Flow:**
+```
+User: "Show attendance trends for class 10A"
+1. Use AI Agent Tool: Query attendance data for class 10A
+2. Get results: [{date: "2025-10-01", rate: 92}, ...]
+3. Format as visualization:
+{
+  "action": "visualize",
+  "type": "chart",
+  "visualType": "line",
+  "data": [...query results...],
+  "config": {
+    "title": "Class 10A Attendance Trends",
+    "xKey": "date",
+    "yKey": "rate"
+  }
+}
+```
 
 ---
 
@@ -660,6 +828,17 @@ For complex tasks, break down into steps:
   "action": "presentOptions",
   "message": "Your clarifying question",
   "options": ["Option 1", "Option 2", "Option 3"]
+}
+```
+
+**Data Visualization:**
+```json
+{
+  "action": "visualize",
+  "type": "stats|chart|table",
+  "visualType": "bar|line|pie|area",
+  "data": [...],
+  "config": {...}
 }
 ```
 

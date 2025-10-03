@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Users, GraduationCap, BookOpen, TrendingUp, Calendar, DollarSign } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import AnalyticsChart from '../../components/charts/AnalyticsChart';
-import AIChat from '../../components/ai/AIChat';
+import FloatingAIAssistant from '../../components/ai/FloatingAIAssistant';
 import { useApiQuery } from '../../hooks/useApi';
 import { API_ENDPOINTS } from '../../config/api';
 
@@ -14,6 +14,7 @@ interface DashboardStats {
 }
 
 const AdminDashboard: React.FC = () => {
+  const [isAIOpen, setIsAIOpen] = useState(false);
   const { data: statsResponse, isLoading, error } = useApiQuery('admin-stats', API_ENDPOINTS.ADMIN.STATS);
 
   console.log('Dashboard stats response:', statsResponse);
@@ -182,8 +183,35 @@ const AdminDashboard: React.FC = () => {
           </div>
         </Card>
 
-        {/* AI Chat */}
-        <AIChat />
+        {/* AI Assistant Card */}
+        <Card hover>
+          <div className="flex flex-col items-center justify-center h-full min-h-[300px] space-y-6">
+            <div className="text-center space-y-4">
+              <h3 className="text-2xl font-bold text-gray-900">AI Assistant</h3>
+              <p className="text-gray-600 max-w-md">
+                Get instant help with navigation, forms, data visualization, and more. 
+                Your intelligent assistant is ready to help!
+              </p>
+            </div>
+            
+            <button
+              onClick={() => setIsAIOpen(true)}
+              className="group relative px-8 py-4 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+            >
+              <span className="flex items-center space-x-2">
+                <span>Launch AI Assistant</span>
+                <span className="text-2xl">✨</span>
+              </span>
+            </button>
+
+            <div className="flex flex-wrap justify-center gap-2 text-xs text-gray-500">
+              <span className="px-3 py-1 bg-gray-100 rounded-full">Navigation</span>
+              <span className="px-3 py-1 bg-gray-100 rounded-full">Form Fill</span>
+              <span className="px-3 py-1 bg-gray-100 rounded-full">Analytics</span>
+              <span className="px-3 py-1 bg-gray-100 rounded-full">Reports</span>
+            </div>
+          </div>
+        </Card>
       </div>
 
       {/* Quick Actions */}
@@ -208,6 +236,9 @@ const AdminDashboard: React.FC = () => {
           </button>
         </div>
       </Card>
+
+      {/* Floating AI Assistant */}
+      <FloatingAIAssistant isOpen={isAIOpen} onClose={() => setIsAIOpen(false)} />
     </div>
   );
 };

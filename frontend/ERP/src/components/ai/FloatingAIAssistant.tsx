@@ -1,15 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { API_ENDPOINTS } from '../../config/api';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import Card from '../ui/Card';
-import Orb from '../ui/Orb';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   autoFillForm,
   detectPageType,
-  FORM_DESCRIPTIONS,
   generateSampleData,
   highlightFilledFields,
   formatFormDataForDisplay,
@@ -20,10 +15,9 @@ interface ChatMessage {
   type: 'user' | 'ai';
   content: string;
   timestamp: Date;
-  options?: string[]; // Quick reply options for user to click
+  options?: string[];
 }
 
-// Route aliases for flexible navigation
 const ROUTE_ALIASES: Record<string, string> = {
   'home': '/',
   'dashboard': '/',
@@ -74,48 +68,42 @@ const ROUTE_ALIASES: Record<string, string> = {
   'settings': '/settings',
 };
 
-const AIChat: React.FC = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: '1',
-      type: 'ai',
-      content: 'Hello! I\'m your AI assistant. I can help you navigate, fill forms, and answer questions. How can I help you today?',
-      timestamp: new Date(),
-    },
-  ]);
+interface FloatingAIAssistantProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ isOpen, onClose }) => {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isPending, setIsPending] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Detect current page type for form assistance
   const currentPageType = detectPageType();
 
-  // Generate or reuse a sessionId stored in localStorage
   const getSessionId = () => {
     let sid = localStorage.getItem('ai_chat_session_id');
     if (!sid) {
-      // simple UUID v4 substitute
       sid = 'sess-' + Math.random().toString(36).substring(2, 10) + '-' + Date.now().toString(36);
       localStorage.setItem('ai_chat_session_id', sid);
     }
     return sid;
   };
 
-  async function sendToN8n(message: string): Promise<{ data: { result: string } }>{ 
+  async function sendToN8n(message: string): Promise<{ data: { result: string } }> {
     const sessionId = getSessionId();
 
-    // Payload with current page context for intelligent assistance
     const payload = {
       sessionId,
       action: 'sendMessage',
       chatInput: message,
-      currentPage: location.pathname, // Add current page context
+      currentPage: location.pathname,
       timestamp: new Date().toISOString(),
     };
 
-    // Use configured n8n webhook endpoint (Vite env or API_ENDPOINTS)
     const url = (import.meta.env.VITE_N8N_CHAT_URL as string) || API_ENDPOINTS.AI.PROCESS;
 
     const headers: Record<string, string> = {
@@ -137,19 +125,26 @@ const AIChat: React.FC = () => {
       if (!res.ok) {
         console.error('n8n webhook returned non-OK:', res.status, text);
         let parsed: any = undefined;
-        try { parsed = JSON.parse(text); } catch { parsed = undefined; }
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          parsed = undefined;
+        }
         const errMsg = parsed?.message || parsed?.error || text || `HTTP ${res.status}`;
         throw new Error(errMsg);
       }
 
       let responsePayload: any;
-      try { responsePayload = JSON.parse(text); } catch { responsePayload = text; }
+      try {
+        responsePayload = JSON.parse(text);
+      } catch {
+        responsePayload = text;
+      }
 
       console.debug('n8n webhook payload:', responsePayload);
 
       let reply: string;
 
-      // If payload is an object and contains common text fields, extract them
       const extractFromObject = (obj: any): string | undefined => {
         if (!obj || typeof obj !== 'object') return undefined;
         if (typeof obj.output === 'string') return obj.output;
@@ -163,7 +158,6 @@ const AIChat: React.FC = () => {
         return undefined;
       };
 
-      // Try top-level object
       if (typeof responsePayload === 'string') reply = responsePayload;
       else if (extractFromObject(responsePayload)) reply = extractFromObject(responsePayload) as string;
       else if (Array.isArray(responsePayload) && responsePayload.length > 0) {
@@ -177,7 +171,6 @@ const AIChat: React.FC = () => {
         } else if (first?.result) reply = first.result;
         else reply = JSON.stringify(first);
       } else {
-        // fallback to stringifying whatever we received
         reply = JSON.stringify(responsePayload);
       }
 
@@ -192,25 +185,18 @@ const AIChat: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Helper to resolve route aliases
   const resolveRoute = (input: string): string | null => {
     const normalized = input.toLowerCase().trim();
     return ROUTE_ALIASES[normalized] || null;
   };
 
-  // Helper to extract and clean response
   const extractResponse = (responseData: any): string => {
     if (!responseData) return '';
-    
-    // If it's already a string, return it
     if (typeof responseData === 'string') return responseData.trim();
-    
-    // If it's an object, try common response fields
     if (typeof responseData === 'object') {
-      return responseData.result || responseData.message || responseData.text || 
-             responseData.output || JSON.stringify(responseData);
+      return responseData.result || responseData.message || responseData.text ||
+        responseData.output || JSON.stringify(responseData);
     }
-    
     return String(responseData);
   };
 
@@ -218,8 +204,19 @@ const AIChat: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    if (isOpen && showWelcome) {
+      const timer = setTimeout(() => {
+        setShowWelcome(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, showWelcome]);
+
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
+
+    setShowWelcome(false);
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -232,22 +229,20 @@ const AIChat: React.FC = () => {
     const originalMessage = inputMessage;
     setInputMessage('');
 
-    // Check for special form commands
     const lowerInput = originalMessage.toLowerCase().trim();
-    
-    // Auto-fill form command
-    if ((lowerInput.includes('fill') || lowerInput.includes('auto fill') || lowerInput.includes('autofill')) && 
-        (lowerInput.includes('form') || lowerInput.includes('this page'))) {
-      
+
+    if ((lowerInput.includes('fill') || lowerInput.includes('auto fill') || lowerInput.includes('autofill')) &&
+      (lowerInput.includes('form') || lowerInput.includes('this page'))) {
+
       if (currentPageType) {
         const sampleData = generateSampleData(currentPageType);
         autoFillForm(sampleData);
         highlightFilledFields(Object.keys(sampleData));
-        
+
         const aiMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           type: 'ai',
-          content: `✨ I've filled the form with sample data! Please review and modify as needed. The filled fields are highlighted briefly.`,
+          content: `✨ I've filled the form with sample data! Please review and modify as needed.`,
           timestamp: new Date(),
         };
         setMessages(prev => [...prev, aiMessage]);
@@ -256,23 +251,7 @@ const AIChat: React.FC = () => {
         const aiMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           type: 'ai',
-          content: `I don't detect a form on this page. I can help with forms on: Student Registration, Teacher Registration, Class Creation, and more. Would you like me to navigate to one of these pages?`,
-          timestamp: new Date(),
-        };
-        setMessages(prev => [...prev, aiMessage]);
-        return;
-      }
-    }
-
-    // Form help command
-    if ((lowerInput.includes('help') || lowerInput.includes('guide') || lowerInput.includes('how')) && 
-        (lowerInput.includes('fill') || lowerInput.includes('form') || lowerInput.includes('page'))) {
-      
-      if (currentPageType && FORM_DESCRIPTIONS[currentPageType]) {
-        const aiMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          type: 'ai',
-          content: `📋 ${FORM_DESCRIPTIONS[currentPageType]}\n\n💡 **Tips:**\n- Fields marked with * are required\n- I can auto-fill sample data for you! Just say "fill this form" or "auto fill"\n- I can verify your data before submission by saying "verify form" or "check data"`,
+          content: `I don't detect a form on this page. Would you like me to navigate to a form page?`,
           timestamp: new Date(),
         };
         setMessages(prev => [...prev, aiMessage]);
@@ -282,44 +261,36 @@ const AIChat: React.FC = () => {
 
     try {
       setIsPending(true);
-      
-      // Add form context to message if on a form page
+
       let contextualMessage = originalMessage;
-      
-      // For validation requests, include current form data
-      if ((lowerInput.includes('verify') || lowerInput.includes('check') || lowerInput.includes('validate')) && 
-          (lowerInput.includes('form') || lowerInput.includes('data') || lowerInput.includes('fields'))) {
-        
+
+      if ((lowerInput.includes('verify') || lowerInput.includes('check') || lowerInput.includes('validate')) &&
+        (lowerInput.includes('form') || lowerInput.includes('data') || lowerInput.includes('fields'))) {
+
         const formDataDisplay = formatFormDataForDisplay();
         contextualMessage = `${originalMessage}\n\n${formDataDisplay}`;
       } else if (currentPageType) {
-        // For other messages on form pages, just add page context
         contextualMessage = `[Current Page: ${currentPageType} form] ${originalMessage}`;
       }
-      
+
       const response = await sendToN8n(contextualMessage);
 
-      // Extract clean response text
       const responseText = extractResponse(response.data?.result);
-      
-      // Check if the response is a navigation command (JSON format)
+
       if (responseText) {
         try {
-          // Clean up the response text - remove markdown code blocks if present
           let cleanedText = responseText.trim();
           if (cleanedText.startsWith('```json')) {
             cleanedText = cleanedText.replace(/```json\s*/g, '').replace(/```\s*/g, '');
           } else if (cleanedText.startsWith('```')) {
             cleanedText = cleanedText.replace(/```\s*/g, '');
           }
-          
-          // Try to parse as JSON first
+
           const parsed = JSON.parse(cleanedText);
-          
+
           console.log('📋 Parsed AI command:', parsed);
-          
+
           if (parsed.action === 'navigate' && parsed.url) {
-            // Handle navigation
             const aiMessage: ChatMessage = {
               id: (Date.now() + 1).toString(),
               type: 'ai',
@@ -327,15 +298,14 @@ const AIChat: React.FC = () => {
               timestamp: new Date(),
             };
             setMessages(prev => [...prev, aiMessage]);
-            
-            // Navigate after a brief delay
+
             setTimeout(() => {
               navigate(parsed.url);
-            }, 500);
+              onClose();
+            }, 1000);
             return;
           }
-          
-          // Handle quick option buttons
+
           if (parsed.action === 'presentOptions' && parsed.options && Array.isArray(parsed.options)) {
             const aiMessage: ChatMessage = {
               id: (Date.now() + 1).toString(),
@@ -347,36 +317,32 @@ const AIChat: React.FC = () => {
             setMessages(prev => [...prev, aiMessage]);
             return;
           }
-          
-          // Handle visualization requests - navigate to visualization page
+
           if (parsed.action === 'visualize') {
             const aiMessage: ChatMessage = {
               id: (Date.now() + 1).toString(),
               type: 'ai',
-              content: `📊 I can help you create that visualization! Let me take you to the visualization page where I can generate it for you.`,
+              content: `📊 I can help you create that visualization! Let me take you to the visualization page.`,
               timestamp: new Date(),
             };
             setMessages(prev => [...prev, aiMessage]);
-            
-            // Navigate to visualization page after a brief delay
+
             setTimeout(() => {
               navigate('/ai/visualizations');
-              // Store the query for the visualization page
               sessionStorage.setItem('pendingVisualizationQuery', originalMessage);
+              onClose();
             }, 1000);
             return;
           }
-          
-          // Handle form fill command from AI
+
           if (parsed.action === 'fillForm' && parsed.data) {
             console.log('✨ Filling form with data:', parsed.data);
-            
-            // Small delay to ensure form is rendered
+
             setTimeout(() => {
               autoFillForm(parsed.data);
               highlightFilledFields(Object.keys(parsed.data));
             }, 100);
-            
+
             const aiMessage: ChatMessage = {
               id: (Date.now() + 1).toString(),
               type: 'ai',
@@ -384,8 +350,7 @@ const AIChat: React.FC = () => {
               timestamp: new Date(),
             };
             setMessages(prev => [...prev, aiMessage]);
-            
-            // Show additional message if there are fields needing attention
+
             if (parsed.fieldsNeedingAttention && parsed.fieldsNeedingAttention.length > 0) {
               setTimeout(() => {
                 const attentionMessage: ChatMessage = {
@@ -401,8 +366,6 @@ const AIChat: React.FC = () => {
           }
         } catch (parseError) {
           console.log('⚠️ Not a JSON command, treating as regular message:', parseError);
-          // Not JSON command
-          // Check if it's a simple text navigation hint
           const route = resolveRoute(responseText);
           if (route) {
             const aiMessage: ChatMessage = {
@@ -412,16 +375,16 @@ const AIChat: React.FC = () => {
               timestamp: new Date(),
             };
             setMessages(prev => [...prev, aiMessage]);
-            
+
             setTimeout(() => {
               navigate(route);
-            }, 500);
+              onClose();
+            }, 1000);
             return;
           }
         }
       }
 
-      // Regular message response
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
@@ -453,26 +416,23 @@ const AIChat: React.FC = () => {
   };
 
   const handleOptionClick = (option: string) => {
-    // Remove options from all messages to prevent re-clicking
     setMessages(prev => prev.map(msg => ({ ...msg, options: undefined })));
-    
-    // Add user message with the selected option
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       type: 'user',
       content: option,
       timestamp: new Date(),
     };
-    
+
     setMessages(prev => [...prev, userMessage]);
-    
-    // Process the option through AI
+
     (async () => {
       try {
         setIsPending(true);
         const response = await sendToN8n(option);
         const responseText = extractResponse(response.data?.result);
-        
+
         if (responseText) {
           try {
             let cleanedText = responseText.trim();
@@ -481,9 +441,9 @@ const AIChat: React.FC = () => {
             } else if (cleanedText.startsWith('```')) {
               cleanedText = cleanedText.replace(/```\s*/g, '');
             }
-            
+
             const parsed = JSON.parse(cleanedText);
-            
+
             if (parsed.action === 'navigate' && parsed.url) {
               const aiMessage: ChatMessage = {
                 id: (Date.now() + 1).toString(),
@@ -492,10 +452,13 @@ const AIChat: React.FC = () => {
                 timestamp: new Date(),
               };
               setMessages(prev => [...prev, aiMessage]);
-              setTimeout(() => navigate(parsed.url), 500);
+              setTimeout(() => {
+                navigate(parsed.url);
+                onClose();
+              }, 1000);
               return;
             }
-            
+
             if (parsed.action === 'presentOptions' && parsed.options) {
               const aiMessage: ChatMessage = {
                 id: (Date.now() + 1).toString(),
@@ -508,10 +471,10 @@ const AIChat: React.FC = () => {
               return;
             }
           } catch (e) {
-            // Not JSON, treat as regular response
+            // Not JSON
           }
         }
-        
+
         const aiMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           type: 'ai',
@@ -534,96 +497,95 @@ const AIChat: React.FC = () => {
     })();
   };
 
-  return (
-    <Card className="h-96 flex flex-col">
-      <div className="flex items-center space-x-3 mb-4 pb-4 border-b border-gray-200">
-        <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-blue-500">
-          <Orb hue={270} hoverIntensity={0.3} rotateOnHover={true} forceHoverState={isPending} />
-        </div>
-        <h3 className="text-lg font-semibold text-gray-900">AI Assistant</h3>
-      </div>
+  if (!isOpen) return null;
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                message.type === 'user'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-900'
-              }`}
-            >
-              <div className="flex items-start space-x-2">
-                {message.type === 'ai' && (
-                  <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
-                    <Orb hue={270} hoverIntensity={0.2} rotateOnHover={false} />
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-50 flex items-end justify-center pointer-events-none">
+      {/* Beautiful gradient fade overlay */}
+      <div 
+        className="absolute inset-0 h-18vh gradient-fade-overlay pointer-events-auto"
+        onClick={onClose}
+      ></div>
+
+      {/* Main content container - centered with bottom spacing */}
+      <div className="relative z-10 w-full flex flex-col items-center justify-end h-18vh pointer-events-none pb-6">
+
+        <div className="w-full max-w-6xl px-8 flex items-center justify-center gap-8 pointer-events-none">
+          {/* Center: Messages and Status */}
+          <div className="flex-1 min-w-0 flex justify-center">
+            {showWelcome && messages.length === 0 ? (
+              <div className="text-center animate-fade-in pointer-events-none">
+                <p className="text-base md:text-lg font-bold text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] [text-shadow:_0_2px_8px_rgb(0_0_0_/_90%),_0_0_20px_rgb(0_0_0_/_70%)]">
+                  Hello! 👋 I'm Aariv, your intelligent School ERP assistant. How can I help you today?
+                </p>
+              </div>
+            ) : isPending ? (
+              <div className="text-center pointer-events-none">
+                <p className="text-sm md:text-base text-white font-bold animate-pulse drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] [text-shadow:_0_2px_8px_rgb(0_0_0_/_90%),_0_0_20px_rgb(0_0_0_/_70%)]">Aariv is thinking...</p>
+              </div>
+            ) : messages.length > 0 ? (
+              <div className="space-y-2 w-full max-w-2xl pointer-events-auto">
+                {messages.slice(-1).map((message) => (
+                  <div key={message.id} className="animate-fade-in">
+                    {message.type === 'ai' && (
+                      <div className="space-y-2">
+                        <div className="bg-white/25 backdrop-blur-xl text-white px-4 py-2.5 rounded-xl shadow-2xl border border-white/40">
+                          <p className="text-xs md:text-sm leading-relaxed font-semibold drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] [text-shadow:_0_1px_4px_rgb(0_0_0_/_80%)]">{message.content}</p>
+                        </div>
+
+                        {/* Quick Options - Better organized */}
+                        {message.options && message.options.length > 0 && (
+                          <div className="flex flex-wrap justify-center gap-2 mt-2">
+                            {message.options.map((option, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => handleOptionClick(option)}
+                                className="px-3 py-1.5 text-xs bg-gradient-to-r from-blue-500/40 to-cyan-500/40 hover:from-blue-500/60 hover:to-cyan-500/60 backdrop-blur-xl text-white rounded-lg border border-blue-300/40 hover:border-blue-300/70 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 font-semibold drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]"
+                                disabled={isPending}
+                              >
+                                {option}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
-                {message.type === 'user' && <User className="w-4 h-4 mt-0.5" />}
-                <div className="w-full">
-                  <p className="text-sm">{message.content}</p>
-                  <p className="text-xs opacity-75 mt-1">
-                    {message.timestamp.toLocaleTimeString()}
-                  </p>
-                  
-                  {/* Quick Option Buttons */}
-                  {message.options && message.options.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {message.options.map((option, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => handleOptionClick(option)}
-                          className="px-3 py-1.5 text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-blue-400 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={isPending}
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          {/* Right: Input Box */}
+          <div className="flex-shrink-0 w-80 pointer-events-auto">
+            <div className="bg-white/25 backdrop-blur-xl rounded-xl border border-blue-300/40 shadow-2xl overflow-hidden hover:border-blue-300/60 transition-all duration-300">
+              <div className="flex items-center px-4 py-2">
+                <input
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your message..."
+                  className="flex-1 bg-transparent text-white placeholder-white/80 outline-none text-xs md:text-sm font-semibold drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]"
+                  disabled={isPending}
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!inputMessage.trim() || isPending}
+                  className="ml-2 w-9 h-9 flex items-center justify-center bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105"
+                  aria-label="Send Message"
+                >
+                  <Send className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" />
+                </button>
               </div>
             </div>
           </div>
-        ))}
-        {isPending && (
-          <div className="flex justify-start">
-            <div className="bg-gray-100 text-gray-900 px-4 py-2 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <div className="w-5 h-5 rounded-full overflow-hidden">
-                  <Orb hue={270} hoverIntensity={0.3} rotateOnHover={true} forceHoverState={true} />
-                </div>
-                <span className="text-sm">AI is thinking...</span>
-              </div>
-            </div>
-          </div>
-        )}
+        </div>
+
         <div ref={messagesEndRef} />
       </div>
-
-      {/* Input */}
-      <div className="flex space-x-2">
-        <Input
-          value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Type your message..."
-          className="flex-1"
-        />
-        <Button
-          onClick={handleSendMessage}
-          disabled={!inputMessage.trim() || isPending}
-          icon={Send}
-        >
-          Send
-        </Button>
-      </div>
-    </Card>
+    </div>
   );
 };
 
-export default AIChat;
+export default FloatingAIAssistant;

@@ -123,7 +123,7 @@ const Sidebar: React.FC = () => {
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <GraduationCap className="w-5 h-5 text-white" />
               </div>
-              <span className="text-lg font-semibold text-gray-900">ERP System</span>
+              <span className="text-lg font-semibold text-gray-900">NexVidhya ERP</span>
             </div>
             <Button
               variant="ghost"

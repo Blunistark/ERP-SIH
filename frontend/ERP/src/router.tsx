@@ -35,6 +35,7 @@ import AttendancePage from './pages/attendance/AttendancePage';
 import MarkAttendancePage from './pages/attendance/MarkAttendancePage';
 import AttendanceReportPage from './pages/attendance/AttendanceReportPage';
 import AIAnalyticsPage from './pages/ai/AIAnalyticsPage';
+import AIVisualizationPage from './pages/ai/AIVisualizationPage';
 import { useAuthStore } from './stores/authStore';
 
 const DashboardRouter: React.FC = () => {
@@ -78,6 +79,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={['ADMIN', 'TEACHER']}>
             <AIAnalyticsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'ai/visualizations',
+        element: (
+          <ProtectedRoute allowedRoles={['ADMIN', 'TEACHER']}>
+            <AIVisualizationPage />
           </ProtectedRoute>
         ),
       },

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import { MessageCircle } from 'lucide-react';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import AIChat from '../ai/AIChat';
+import FloatingAIAssistant from '../ai/FloatingAIAssistant';
+import Orb from '../ui/Orb';
 
 const Layout: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(() => {
@@ -26,19 +26,21 @@ const Layout: React.FC = () => {
           </div>
         </main>
       </div>
-      {/* AI Chat Overlay */}
-      {isChatOpen && (
-        <div className="fixed bottom-16 left-1/2 z-50 transform -translate-x-1/2">
-          <AIChat />
-        </div>
-      )}
-      {/* Toggle Button */}
+      
+      {/* Floating AI Assistant */}
+      <FloatingAIAssistant isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      
+      {/* Toggle Button with Orb - Blue Theme with Animation */}
       <button
         onClick={() => setIsChatOpen(!isChatOpen)}
-        className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors z-50"
-        aria-label="Toggle AI Chat"
+        className={`fixed bottom-4 w-16 h-16 rounded-full shadow-2xl shadow-blue-400/60 hover:shadow-blue-500/80 z-50 hover:scale-110 overflow-hidden transition-all duration-700 ease-in-out ${
+          isChatOpen 
+            ? 'left-[7%]' 
+            : 'left-1/2 transform -translate-x-1/2'
+        }`}
+        aria-label="Toggle AI Assistant"
       >
-        <MessageCircle className="w-6 h-6" />
+        <Orb hue={190} hoverIntensity={0.4} rotateOnHover={true} forceHoverState={isChatOpen} />
       </button>
     </div>
   );
