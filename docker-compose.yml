@@ -76,7 +76,7 @@ services:
     container_name: erp-nginx
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8080:80"  # Changed to 8080 to avoid conflict with n8n on port 80
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro

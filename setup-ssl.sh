@@ -12,7 +12,7 @@ echo ""
 
 # Check if domain is provided
 DOMAIN="erp.hacksters.tech"
-EMAIL="your-email@hacksters.tech"  # Change this!
+EMAIL="admin@hacksters.tech"  # Change this!
 
 echo "Domain: $DOMAIN"
 echo "Email: $EMAIL"
