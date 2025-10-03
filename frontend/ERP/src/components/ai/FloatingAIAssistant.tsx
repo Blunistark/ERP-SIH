@@ -301,7 +301,6 @@ const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ isOpen, onClo
 
             setTimeout(() => {
               navigate(parsed.url);
-              onClose();
             }, 1000);
             return;
           }
@@ -378,7 +377,6 @@ const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ isOpen, onClo
 
             setTimeout(() => {
               navigate(route);
-              onClose();
             }, 1000);
             return;
           }
@@ -454,7 +452,6 @@ const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ isOpen, onClo
               setMessages(prev => [...prev, aiMessage]);
               setTimeout(() => {
                 navigate(parsed.url);
-                onClose();
               }, 1000);
               return;
             }
@@ -515,13 +512,13 @@ const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ isOpen, onClo
           <div className="flex-1 min-w-0 flex justify-center">
             {showWelcome && messages.length === 0 ? (
               <div className="text-center animate-fade-in pointer-events-none">
-                <p className="text-base md:text-lg font-bold text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] [text-shadow:_0_2px_8px_rgb(0_0_0_/_90%),_0_0_20px_rgb(0_0_0_/_70%)]">
+                <p className="text-base md:text-lg font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
                   Hello! 👋 I'm Aariv, your intelligent School ERP assistant. How can I help you today?
                 </p>
               </div>
             ) : isPending ? (
               <div className="text-center pointer-events-none">
-                <p className="text-sm md:text-base text-white font-bold animate-pulse drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] [text-shadow:_0_2px_8px_rgb(0_0_0_/_90%),_0_0_20px_rgb(0_0_0_/_70%)]">Aariv is thinking...</p>
+                <p className="text-sm md:text-base text-white font-bold animate-pulse drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">Aariv is thinking...</p>
               </div>
             ) : messages.length > 0 ? (
               <div className="space-y-2 w-full max-w-2xl pointer-events-auto">
@@ -530,7 +527,7 @@ const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ isOpen, onClo
                     {message.type === 'ai' && (
                       <div className="space-y-2">
                         <div className="bg-white/25 backdrop-blur-xl text-white px-4 py-2.5 rounded-xl shadow-2xl border border-white/40">
-                          <p className="text-xs md:text-sm leading-relaxed font-semibold drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] [text-shadow:_0_1px_4px_rgb(0_0_0_/_80%)]">{message.content}</p>
+                          <p className="text-xs md:text-sm leading-relaxed font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">{message.content}</p>
                         </div>
 
                         {/* Quick Options - Better organized */}
@@ -540,7 +537,7 @@ const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ isOpen, onClo
                               <button
                                 key={idx}
                                 onClick={() => handleOptionClick(option)}
-                                className="px-3 py-1.5 text-xs bg-gradient-to-r from-blue-500/40 to-cyan-500/40 hover:from-blue-500/60 hover:to-cyan-500/60 backdrop-blur-xl text-white rounded-lg border border-blue-300/40 hover:border-blue-300/70 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 font-semibold drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]"
+                                className="px-3 py-1.5 text-xs bg-gradient-to-r from-blue-500/40 to-cyan-500/40 hover:from-blue-500/60 hover:to-cyan-500/60 backdrop-blur-xl text-white rounded-lg border border-blue-300/40 hover:border-blue-300/70 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 font-semibold"
                                 disabled={isPending}
                               >
                                 {option}
@@ -566,7 +563,7 @@ const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ isOpen, onClo
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Type your message..."
-                  className="flex-1 bg-transparent text-white placeholder-white/80 outline-none text-xs md:text-sm font-semibold drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]"
+                  className="flex-1 bg-transparent text-white placeholder-white/80 outline-none text-xs md:text-sm font-semibold"
                   disabled={isPending}
                 />
                 <button
@@ -575,7 +572,7 @@ const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ isOpen, onClo
                   className="ml-2 w-9 h-9 flex items-center justify-center bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105"
                   aria-label="Send Message"
                 >
-                  <Send className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" />
+                  <Send className="w-4 h-4 text-white" />
                 </button>
               </div>
             </div>
