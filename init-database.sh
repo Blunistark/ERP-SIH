@@ -41,14 +41,22 @@ async function seed() {
     create: {
       email: 'admin@school.com',
       password: hashedPassword,
-      firstName: 'Admin',
-      lastName: 'User',
       role: 'ADMIN',
-      isActive: true
+      isActive: true,
+      profile: {
+        create: {
+          firstName: 'Admin',
+          lastName: 'User'
+        }
+      }
+    },
+    include: {
+      profile: true
     }
   });
   
   console.log('✅ Admin user created:', admin.email);
+  console.log('   Name:', admin.profile.firstName, admin.profile.lastName);
   console.log('   Password: Admin@123');
   
   await prisma.\$disconnect();
