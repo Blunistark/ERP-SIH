@@ -17,7 +17,8 @@ fi
 if grep -q "CHANGE_THIS_TO_A_VERY_LONG_RANDOM_STRING" .env; then
     echo "📝 Generating new JWT_SECRET..."
     JWT_SECRET=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
-    sed -i "s|CHANGE_THIS_TO_A_VERY_LONG_RANDOM_STRING|${JWT_SECRET}|g" .env
+    # Use awk to replace the JWT_SECRET line (more reliable than sed with special chars)
+    awk -v secret="$JWT_SECRET" '{gsub(/CHANGE_THIS_TO_A_VERY_LONG_RANDOM_STRING/, secret)}1' .env > .env.tmp && mv .env.tmp .env
     echo "✅ JWT_SECRET updated"
 else
     echo "✅ JWT_SECRET already set"
