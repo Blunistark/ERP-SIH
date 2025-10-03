@@ -10,7 +10,7 @@ echo ""
 
 # Copy migrations to container
 echo "📁 Copying migrations to container..."
-docker cp ./prisma/migrations app:/app/prisma/
+docker cp ./prisma/migrations school-erp-backend:/app/prisma/
 
 # Check if migrations exist in container
 echo "🔍 Checking for migrations in container..."
