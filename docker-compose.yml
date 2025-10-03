@@ -5,9 +5,9 @@ services:
     container_name: school-erp-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: school_erp
-      POSTGRES_USER: school_admin
-      POSTGRES_PASSWORD: secure_password_123
+      POSTGRES_DB: ${DB_NAME:-school_erp}
+      POSTGRES_USER: ${DB_USER:-school_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password_123}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -16,7 +16,7 @@ services:
     networks:
       - school-erp-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U school_admin -d school_erp"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-school_admin} -d ${DB_NAME:-school_erp}"]
       interval: 10s
       timeout: 5s
       retries: 5
