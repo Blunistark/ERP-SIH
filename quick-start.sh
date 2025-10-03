@@ -93,9 +93,9 @@ if [ ! -f .env ]; then
     DB_PASS=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-32)
     JWT_SECRET=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
     
-    # Update .env file
-    sed -i "s/CHANGE_THIS_SECURE_PASSWORD/$DB_PASS/" .env
-    sed -i "s/CHANGE_THIS_TO_A_VERY_LONG_RANDOM_STRING/$JWT_SECRET/" .env
+    # Update .env file using direct file replacement (safer than sed with special chars)
+    sed -i "s|CHANGE_THIS_SECURE_PASSWORD|${DB_PASS}|g" .env
+    sed -i "s|CHANGE_THIS_TO_A_VERY_LONG_RANDOM_STRING|${JWT_SECRET}|g" .env
     
     echo -e "${GREEN}✓ Environment file created with secure secrets${NC}"
     echo -e "${YELLOW}⚠️  Secrets saved in .env - keep this file secure!${NC}"
