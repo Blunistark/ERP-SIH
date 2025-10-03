@@ -25,6 +25,7 @@ import noticeRoutes from './routes/notice.routes';
 import settingsRoutes from './routes/settings.routes';
 import aiRoutes from './routes/ai.routes';
 import adminRoutes from './routes/admin.routes';
+import formRoutes from './routes/form.routes';
 
 // Load environment variables
 dotenv.config();
@@ -127,6 +128,7 @@ app.use('/api/notices', noticeRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/forms', formRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

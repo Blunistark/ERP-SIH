@@ -51,23 +51,71 @@ export const useVoiceAndTTS = (): UseVoiceAndTTSReturn => {
     SpeechRecognition.stopListening();
   }, []);
 
-  // Speak text using Web Speech API with automatic language detection
-  const speak = useCallback((text: string) => {
+  // Speak text using Murf.ai TTS API
+  const speak = useCallback(async (text: string) => {
     if (!text) return;
 
     // Cancel any ongoing speech
+    stopSpeaking();
+
+    try {
+      setIsSpeaking(true);
+
+      // Detect language from text content
+      const detectedLang = detectLanguage(text);
+      const voiceId = getVoiceForLanguage(detectedLang);
+
+      // Call Murf.ai API
+      const response = await fetch("https://api.murf.ai/v1/speech/stream", {
+        method: "POST",
+        headers: {
+          "api-key": "ap2_bfe529e5-233d-4f7a-a239-82c0a2193718",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          text: text,
+          voiceId: voiceId
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Murf.ai API error: ${response.status}`);
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+
+      audio.onplay = () => setIsSpeaking(true);
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+        console.error('Audio playback error');
+      };
+
+      await audio.play();
+    } catch (error) {
+      console.error('TTS Error:', error);
+      setIsSpeaking(false);
+      
+      // Fallback to browser TTS if Murf.ai fails
+      fallbackToWebSpeech(text);
+    }
+  }, []);
+
+  // Fallback to Web Speech API if Murf.ai fails
+  const fallbackToWebSpeech = useCallback((text: string) => {
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    
-    // Detect language from text content
     const detectedLang = detectLanguage(text);
     utterance.lang = detectedLang;
 
-    // Get available voices
     const voices = window.speechSynthesis.getVoices();
-    
-    // Find a voice that matches the detected language
     const matchingVoice = voices.find(voice => 
       voice.lang.startsWith(detectedLang.split('-')[0])
     );
@@ -76,10 +124,9 @@ export const useVoiceAndTTS = (): UseVoiceAndTTSReturn => {
       utterance.voice = matchingVoice;
     }
 
-    // Speech settings
-    utterance.rate = 1.0; // Normal speed
-    utterance.pitch = 1.0; // Normal pitch
-    utterance.volume = 1.0; // Full volume
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
 
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
@@ -91,12 +138,18 @@ export const useVoiceAndTTS = (): UseVoiceAndTTSReturn => {
   // Stop speaking
   const stopSpeaking = useCallback(() => {
     window.speechSynthesis.cancel();
+    // Stop any playing audio elements
+    const audioElements = document.querySelectorAll('audio');
+    audioElements.forEach(audio => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
     setIsSpeaking(false);
   }, []);
 
   // Toggle auto-speak
   const toggleAutoSpeak = useCallback(() => {
-    setAutoSpeak(prev => !prev);
+    setAutoSpeak((prev: boolean) => !prev);
   }, []);
 
   // Load voices when they become available
@@ -167,5 +220,24 @@ function detectLanguage(text: string): string {
   if (/[\u0900-\u097F]/.test(cleanText)) return 'mr-IN';
   
   // Default to English
-  return 'en-IN';
+  return 'en-US';
+}
+
+// Map language codes to Murf.ai voice IDs
+function getVoiceForLanguage(langCode: string): string {
+  const voiceMap: Record<string, string> = {
+    'en-US': 'en-US-natalie',
+    'en-IN': 'en-IN-priya',
+    'hi-IN': 'hi-IN-priya',
+    'bn-IN': 'en-IN-priya', // Fallback to English Indian voice
+    'ta-IN': 'en-IN-priya', // Fallback to English Indian voice
+    'te-IN': 'en-IN-priya', // Fallback to English Indian voice
+    'kn-IN': 'en-IN-priya', // Fallback to English Indian voice
+    'ml-IN': 'en-IN-priya', // Fallback to English Indian voice
+    'gu-IN': 'en-IN-priya', // Fallback to English Indian voice
+    'pa-IN': 'en-IN-priya', // Fallback to English Indian voice
+    'mr-IN': 'en-IN-priya', // Fallback to English Indian voice
+  };
+  
+  return voiceMap[langCode] || 'en-US-natalie';
 }

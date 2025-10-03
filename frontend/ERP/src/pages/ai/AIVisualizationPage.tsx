@@ -165,7 +165,32 @@ const AIVisualizationPage: React.FC = () => {
             const parsed = JSON.parse(textContent);
             return extractVisualization(parsed);
           } catch {
-            // Not valid JSON
+            // Not valid JSON - try to extract structured data from text
+            console.warn('Response is plain text, attempting to parse...');
+            
+            // Check if it's a numbered list (top N items)
+            const numberedListRegex = /\d+\.\s+\*?\*?([^:*]+)\*?\*?:\s*([0-9.]+%?)/g;
+            const listMatches = [...textContent.matchAll(numberedListRegex)];
+            
+            if (listMatches.length > 0) {
+              // Extract data from numbered list
+              const tableData = listMatches.map((match, index) => ({
+                rank: index + 1,
+                name: match[1].trim(),
+                value: match[2].trim()
+              }));
+              
+              return {
+                type: 'table',
+                data: tableData,
+                config: {
+                  title: 'Top Performers',
+                  columns: ['rank', 'name', 'value']
+                },
+                query,
+                timestamp: new Date(),
+              };
+            }
           }
         }
 

@@ -60,6 +60,7 @@ const navigation: NavigationItem[] = [
   { name: 'Attendance', href: '/attendance', icon: ClipboardCheck, roles: ['ADMIN', 'TEACHER', 'PARENT'] },
   { name: 'Examinations', href: '/examinations', icon: GraduationCap },
   { name: 'Data Visualization', href: '/ai/visualizations', icon: BarChart3 },
+  { name: 'Form Generator', href: '/forms/generator', icon: Sparkles, roles: ['ADMIN', 'TEACHER'] },
   { name: 'Communications', href: '/communications', icon: Bell },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
   { name: 'Settings', href: '/settings', icon: Settings, roles: ['ADMIN'] },

@@ -373,3 +373,30 @@ model SchoolSettings {
 
   @@map("school_settings")
 }
+
+model Form {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  fields      Json     // Store FormField[] as JSON
+  tableName   String   @unique
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  responses FormResponse[]
+
+  @@map("forms")
+}
+
+model FormResponse {
+  id          String   @id @default(cuid())
+  formId      String
+  data        Json     // Store form submission data as JSON
+  submittedAt DateTime @default(now())
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@map("form_responses")
+}

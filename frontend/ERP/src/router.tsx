@@ -36,6 +36,9 @@ import MarkAttendancePage from './pages/attendance/MarkAttendancePage';
 import AttendanceReportPage from './pages/attendance/AttendanceReportPage';
 import AIAnalyticsPage from './pages/ai/AIAnalyticsPage';
 import AIVisualizationPage from './pages/ai/AIVisualizationPage';
+import AIFormGenerator from './pages/forms/AIFormGenerator';
+import PublicFormSubmission from './pages/forms/PublicFormSubmission';
+import FormResponsesDashboard from './pages/forms/FormResponsesDashboard';
 import { useAuthStore } from './stores/authStore';
 
 const DashboardRouter: React.FC = () => {
@@ -89,6 +92,27 @@ export const router = createBrowserRouter([
             <AIVisualizationPage />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: 'forms',
+        children: [
+          {
+            path: 'generator',
+            element: (
+              <ProtectedRoute allowedRoles={['ADMIN', 'TEACHER']}>
+                <AIFormGenerator />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: 'responses',
+            element: (
+              <ProtectedRoute allowedRoles={['ADMIN', 'TEACHER']}>
+                <FormResponsesDashboard />
+              </ProtectedRoute>
+            ),
+          },
+        ],
       },
       {
         path: 'users',
@@ -348,6 +372,10 @@ export const router = createBrowserRouter([
         ],
       },
     ],
+  },
+  {
+    path: '/form/:formId',
+    element: <PublicFormSubmission />,
   },
   {
     path: '/unauthorized',

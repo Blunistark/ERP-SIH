@@ -42,6 +42,16 @@ export const API_ENDPOINTS = {
     BEHAVIOR: '/ai/behavior',
     RESOURCES: '/ai/resources',
   },
+
+  // Forms
+  FORMS: {
+    CREATE: '/forms/create',
+    LIST: '/forms/list',
+    GET: '/forms',
+    SUBMIT: '/forms/submit',
+    RESPONSES: '/forms/responses',
+    DELETE: '/forms/delete',
+  },
 } as const;
 
 export const getAuthHeaders = (token?: string) => {
