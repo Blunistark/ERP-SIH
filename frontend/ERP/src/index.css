@@ -35,9 +35,12 @@
       rgba(96, 165, 250, 0.3) 60%,     /* Light blue */
       rgba(147, 197, 253, 0.15) 80%,   /* Very light blue */
       transparent 100%                  /* Fade to transparent */
-    );
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
+    ) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    backdrop-filter: blur(12px) !important;
+    position: absolute !important;
+    inset: 0 !important;
+    pointer-events: auto !important;
   }
 
   .scrollbar-thin::-webkit-scrollbar {

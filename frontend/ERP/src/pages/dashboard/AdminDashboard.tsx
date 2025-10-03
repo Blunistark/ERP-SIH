@@ -187,7 +187,7 @@ const AdminDashboard: React.FC = () => {
         <Card hover>
           <div className="flex flex-col items-center justify-center h-full min-h-[300px] space-y-6">
             <div className="text-center space-y-4">
-              <h3 className="text-2xl font-bold text-gray-900">AI Assistant</h3>
+              <h3 className="text-2xl font-bold text-gray-900">Aariv AI Assistant</h3>
               <p className="text-gray-600 max-w-md">
                 Get instant help with navigation, forms, data visualization, and more. 
                 Your intelligent assistant is ready to help!

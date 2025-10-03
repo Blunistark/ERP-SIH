@@ -20,7 +20,7 @@ const Layout: React.FC = () => {
       <Sidebar />
       <div className="flex-1 min-w-0">
         <Header />
-        <main className="p-6">
+        <main className={`p-6 transition-all duration-700 ${isChatOpen ? 'pb-[35vh]' : 'pb-6'}`}>
           <div className="w-full">
             <Outlet />
           </div>
@@ -35,7 +35,7 @@ const Layout: React.FC = () => {
         onClick={() => setIsChatOpen(!isChatOpen)}
         className={`fixed bottom-4 w-16 h-16 rounded-full shadow-2xl shadow-blue-400/60 hover:shadow-blue-500/80 z-50 hover:scale-110 overflow-hidden transition-all duration-700 ease-in-out ${
           isChatOpen 
-            ? 'left-[7%]' 
+            ? 'left-[5%]' 
             : 'left-1/2 transform -translate-x-1/2'
         }`}
         aria-label="Toggle AI Assistant"

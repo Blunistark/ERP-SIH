@@ -94,6 +94,7 @@ const AIVisualizationPage: React.FC = () => {
       const payload = {
         sessionId,
         action: 'visualize',
+        chatInput: query,
         query,
         visualizationType: selectedType,
         currentPage: '/ai/visualizations',
@@ -129,8 +130,47 @@ const AIVisualizationPage: React.FC = () => {
       const extractVisualization = (data: any): VisualizationData | null => {
         if (!data) return null;
 
+        // Extract from markdown code blocks (```json ... ```)
+        if (typeof data === 'string' || data.output) {
+          const textContent = typeof data === 'string' ? data : data.output;
+          
+          // Try to extract JSON from markdown code blocks
+          const jsonBlockRegex = /```json\s*\n?([\s\S]*?)\n?```/g;
+          const matches = [...textContent.matchAll(jsonBlockRegex)];
+          
+          if (matches.length > 0) {
+            // Try each JSON block until we find a valid visualization
+            for (const match of matches) {
+              try {
+                const parsed = JSON.parse(match[1].trim());
+                if (parsed.action === 'visualize') {
+                  return {
+                    type: parsed.type || 'chart',
+                    visualType: parsed.visualType,
+                    data: parsed.data || [],
+                    config: parsed.config || {},
+                    query,
+                    timestamp: new Date(),
+                  };
+                }
+              } catch (e) {
+                console.warn('Failed to parse JSON block:', e);
+                continue;
+              }
+            }
+          }
+          
+          // Try to parse entire string as JSON
+          try {
+            const parsed = JSON.parse(textContent);
+            return extractVisualization(parsed);
+          } catch {
+            // Not valid JSON
+          }
+        }
+
         // Direct visualization object
-        if (data.action === 'visualize' && data.data) {
+        if (data.action === 'visualize' && data.data !== undefined) {
           return {
             type: data.type || 'chart',
             visualType: data.visualType,

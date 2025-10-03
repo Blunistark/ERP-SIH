@@ -3,6 +3,7 @@ import { Send, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { useVoiceAndTTS } from '../../hooks/useVoiceAndTTS';
 import { API_ENDPOINTS } from '../../config/api';
 import { useNavigate, useLocation } from 'react-router-dom';
+// import GradualBlur from '../ui/GradualBlur';
 import {
   autoFillForm,
   detectPageType,
@@ -561,15 +562,28 @@ const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ isOpen, onClo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 flex items-end justify-center pointer-events-none">
-      {/* Beautiful gradient fade overlay - 30% screen height */}
+    <div className="fixed bottom-0 left-0 right-0 h-30vh z-50 flex items-end justify-center pointer-events-none overflow-hidden">
+      {/* Beautiful gradient fade overlay with blur - 30% screen height */}
       <div 
-        className="absolute inset-0 h-30vh gradient-fade-overlay pointer-events-auto"
+        className="absolute inset-0 gradient-fade-overlay bg-gradient-to-t from-blue-900/90 via-blue-600/50 to-transparent pointer-events-auto"
         onClick={onClose}
-      ></div>
+        style={{ cursor: 'pointer' }}
+      >
+        {/* Gradual Blur Effect at Top Edge */}
+        {/* <GradualBlur
+          target="parent"
+          position="top"
+          height="8rem"
+          strength={3}
+          divCount={8}
+          curve="bezier"
+          exponential={true}
+          opacity={1}
+        /> */}
+      </div>
 
       {/* Main content container - centered with bottom spacing */}
-      <div className="relative z-10 w-full flex flex-col items-center justify-end h-30vh pointer-events-none pb-6">
+      <div className="relative z-10 w-full flex flex-col items-center justify-end h-full pointer-events-none pb-6">
 
         <div className="w-full max-w-6xl px-8 flex items-center justify-center gap-8 pointer-events-none">
           {/* Center: Messages and Status */}
