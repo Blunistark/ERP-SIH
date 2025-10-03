@@ -23,13 +23,44 @@ fi
 
 echo -e "${YELLOW}This script will:${NC}"
 echo "1. Install Docker and Docker Compose"
-echo "2. Configure the application"
-echo "3. Deploy all services"
+echo "2. Clone the repository"
+echo "3. Configure the application"
+echo "4. Deploy all services"
 echo ""
 read -p "Continue? (y/N): " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     exit 0
+fi
+
+# Check if we're in the repository directory
+if [ ! -f "docker-compose.yml" ]; then
+    echo -e "${YELLOW}Repository not found. Cloning from GitHub...${NC}"
+    
+    # Check if git is installed
+    if ! command -v git &> /dev/null; then
+        echo -e "${YELLOW}Installing Git...${NC}"
+        sudo apt update
+        sudo apt install git -y
+        echo -e "${GREEN}✓ Git installed${NC}"
+    fi
+    
+    # Clone repository
+    REPO_URL="https://github.com/Blunistark/ERP-SIH.git"
+    REPO_DIR="ERP-SIH"
+    
+    if [ -d "$REPO_DIR" ]; then
+        echo -e "${YELLOW}Directory $REPO_DIR already exists. Using it...${NC}"
+        cd "$REPO_DIR"
+        git pull origin main
+    else
+        echo -e "${YELLOW}Cloning repository...${NC}"
+        git clone "$REPO_URL"
+        cd "$REPO_DIR"
+    fi
+    
+    echo -e "${GREEN}✓ Repository cloned${NC}"
+    echo ""
 fi
 
 # Install Docker
